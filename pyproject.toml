@@ -3,14 +3,14 @@ requires = ["flit"]
 build-backend = "flit.buildapi"
 
 [tool.flit.metadata]
-module = "regex_copy"
+module = "recp"
 author = "Felix G. Knorr"
 author-email = "knorr.felix@gmx.de"
-home-page = "https://github.com/KnorrFG/regex_copy"
+home-page = "https://github.com/KnorrFG/recp"
 requires = ["pandas", "click", "tqdm"]
 requires-python = ">=3.7"
-description-file="README.rst"
+description-file="README.md"
 classifiers = ["License :: OSI Approved :: MIT License"]
 
 [tool.flit.scripts]
-recp = "regex_copy:main"
+recp = "recp:main"
