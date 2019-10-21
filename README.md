@@ -49,3 +49,10 @@ NIC_ID,SubjectID
 00902,202
 00823,203
 ```
+
+# Installation
+
+You can directly install via pip:
+``` bash
+pip install git+https://github.com/KnorrFG/recp.git
+```
