@@ -1,0 +1,16 @@
+[build-system]
+requires = ["flit"]
+build-backend = "flit.buildapi"
+
+[tool.flit.metadata]
+module = "regex_copy"
+author = "Felix G. Knorr"
+author-email = "knorr.felix@gmx.de"
+home-page = "https://github.com/KnorrFG/regex_copy"
+requires = ["pandas", "click", "tqdm"]
+requires-python = ">=3.7"
+description-file="README.rst"
+classifiers = ["License :: OSI Approved :: MIT License"]
+
+[tool.flit.scripts]
+recp = "regex_copy:main"
