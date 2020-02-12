@@ -1,11 +1,11 @@
 """A command line tool to copy files based on regular expressions."""
-__version__ = "1.0"
+__version__ = "1.0.1"
 
 import re
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List
+from typing import List, NamedTuple
 
 import click
 import pandas as pd
@@ -33,6 +33,9 @@ class Mapper:
                         self.table[self.table[old_key] == val][new_key].values[0]
                 for (old_key, val), new_key in zip(attrs.items(), new_keys)}
 
+class PathDescription(NamedTuple):
+    path: Path
+    attrs: dict
 
 def walk_re_path(current_path: Path, path_elems: List[str], 
                  is_re: List[bool], res: List[re.Match], 
@@ -48,16 +51,19 @@ def walk_re_path(current_path: Path, path_elems: List[str],
                     yield from walk_re_path(dc, path_elems[1:], is_re[1:], 
                                             res[1:], fail_silently, 
                                             next_group_dict)
-                else: yield dc, next_group_dict
+                else: yield PathDescription(dc, next_group_dict)
     else:
         new_path = current_path / path_elems[0]
-        if not (fail_silently or new_path.exists()):
-            raise REError(f"The path {str(new_path)} does not exist")
+        if not new_path.exists():
+            if fail_silently:
+                yield None
+            else:
+                raise REError(f"The path {str(new_path)} does not exist")
         elif len(path_elems) > 1: 
             yield from walk_re_path(new_path, path_elems[1:], is_re[1:], 
                                       res[1:], fail_silently, cgd)
         else:
-            yield new_path, cgd
+            yield PathDescription(new_path, cgd)
 
 
 def contains_regex(elem: str):
@@ -121,16 +127,19 @@ def main(src_regex: str, target_format_str: str, copy: bool,
         path_elems = to_abs(src_regex).split("/")
         target_format_str = to_abs(target_format_str)
         is_re = [contains_regex(e) for e in path_elems]
-        res = [re.compile(e) if reg else None for e, reg in zip(path_elems, is_re)]
+        res = [re.compile(e) if reg else None
+               for e, reg in zip(path_elems, is_re)]
 
         if bool(mapping_str) != bool(mapping_file):
-            raise REError("Either --maping-str and --mapping-file must be given, or none of it")
+            raise REError("Either --maping-str and --mapping-file must be "
+                          "given, or none of it")
         
         mapper = Mapper(pd.read_csv(mapping_file, dtype=object), mapping_str)\
             if mapping_str else Mapper()
-        copy_ops = [(path, target_format_str.format(**mapper(attrs))) 
-                    for path, attrs in walk_re_path(Path("/"), path_elems, 
-                                                    is_re, res, fail_silently)]
+        copy_ops = [(pd.path, target_format_str.format(**mapper(pd.attrs))) 
+                    for pd in walk_re_path(Path("/"), path_elems, 
+                                          is_re, res, fail_silently)
+                    if pd is not None]
         if not copy:
             print(f"{len(copy_ops)} files found.")
             print("To copy the files use -c")
